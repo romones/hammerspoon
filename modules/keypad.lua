@@ -1,31 +1,30 @@
-
+local application = require 'hs.application'
 local hotkey = require 'hs.hotkey'
-local appfinder = require 'hs.appfinder'
+local urlevent = require 'hs.urlevent'
 
+local api = import('modules/api')
 
 local function module_init()
-    local mash = config:get("arrows.mash", { "cmd", "ctrl", "alt" , "shift"})
-    local keys = config:get("arrows.keys", {
-        PAD8 = "hammerspoon://bindings?open=https%3A//meet.google.com&chrome=corp",
-        PAD7 = "hammerspoon://bindings?open=chrome-extension%3A//&chrome=corp",
-        PAD6 = "hammerspoon://bindings?activate=iTerm2",
-        PAD5 = "hammerspoon://bindings?open=https%3A//colab.corp.google.com&chrome=corp",
-        PAD4 = "hammerspoon://bindings?open=https%3A//cider.corp.google.com&chrome=corp",
-        PAD3 = "hammerspoon://bindings?open=https%3A//source.corp.google.com&chrome=corp",
-        PAD2 = "hammerspoon://bindings?open=https%3A//critique-ng.corp.google.com&chrome=corp",
-        PAD1 = "hammerspoon://bindings?open=https%3A//b.corp.google.com&chrome=corp"
-    })
+    local mash = config:get("keypad.mash", { "cmd", "ctrl", "alt", "shift" })
+    -- Keep machine/work-specific URLs in untracked config.local.lua (see config.local.example.lua).
+    local keys = config:get("keypad.keys", {})
+    local ignore_apps = config:get("keypad.ignore_apps", { "Wow" })
 
-    for key, url_string in pairs(keys) do
-
+    for key, target in pairs(keys) do
         hotkey.bind(mash, key, function()
-            if appfinder.appFromName("Wow") == nil then
-              hs.urlevent.openURL(url_string)
+            for _, app_name in ipairs(ignore_apps) do
+                if application.find(app_name, true, true) ~= nil then
+                    return
+                end
+            end
+
+            if type(target) == "table" then
+                api.handle(target)
+            elseif type(target) == "string" then
+                urlevent.openURL(target)
             end
         end)
-
     end
-
 end
 
 return {

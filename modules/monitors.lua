@@ -10,15 +10,14 @@ local function init_module()
     local mash = config:get('binds.mash', { "cmd", "ctrl" })
 
     for id, monitor in pairs(monitors.configured_monitors) do
-
         hotkey.bind({ "cmd", "ctrl" }, "PAD" .. id, function()
             local midpoint = geometry.rectMidPoint(monitor.dimensions)
-            mouse.set(midpoint)
+            mouse.absolutePosition(midpoint)
         end)
 
         hotkey.bind({ "cmd", "ctrl", "alt" }, "PAD" .. id, function()
             local win = window.focusedWindow()
-        if win ~= nil then
+            if win ~= nil then
                 win:setFrame(position.full(monitor.dimensions))
             end
         end)
@@ -36,6 +35,7 @@ local function init_module()
                 win:setFrame(position.right(monitor.dimensions))
             end
         end)
+
         hotkey.bind({ "shift", "ctrl", "alt" }, "PAD" .. id, function()
             local win = window.focusedWindow()
             if win ~= nil then
@@ -43,32 +43,29 @@ local function init_module()
             end
         end)
     end
-  
-  
-    hotkey.bind(mash, '1', function() MoveWindowToSpace(1) end)
 
     hotkey.bind(mash, 'TAB', function()
-        local screen = hs.mouse.getCurrentScreen()
+        local screen = mouse.getCurrentScreen()
+        if screen == nil then return end
         local nextScreen = screen:next()
-        local rect = nextScreen:fullFrame()
-        local center = hs.geometry.rectMidPoint(rect)
-        -- hs.mouse.setRelativePosition(center, nextScreen)
-        hs.mouse.setAbsolutePosition(center)
+        if nextScreen == nil then return end
+        local center = geometry.rectMidPoint(nextScreen:fullFrame())
+        mouse.absolutePosition(center)
     end)
 
-    hotkey.bind(mash, '=', function () 
-        window.focusedWindow():moveOneScreenEast(
-            {noResize=false, ensureInScreenBounds=true})
+    hotkey.bind(mash, '=', function()
+        local win = window.focusedWindow()
+        if win ~= nil then
+            win:moveOneScreenEast(false, true)
+        end
     end)
 
-    hotkey.bind(mash, '/', function () 
-        window.focusedWindow():moveOneScreenWest(
-            {noResize=false, ensureInScreenBounds=true})
+    hotkey.bind(mash, '/', function()
+        local win = window.focusedWindow()
+        if win ~= nil then
+            win:moveOneScreenWest(false, true)
+        end
     end)
-
-    -- hotkey.bind(mash, '', hs.window.focusedWindow():moveOneScreenNorth())
-    -- hotkey.bind(mash, '', hs.window.focusedWindow():moveOneScreenSouth())
-   
 end
 
 return {
