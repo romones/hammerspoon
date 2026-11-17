@@ -1,0 +1,9 @@
+# Local private overrides (work URLs, personal app/PWA IDs, machine-specific settings)
+config.local.lua
+*.local.lua
+*.local.json
+local/
+.githooks/patterns.local
+
+# macOS clutter
+.DS_Store

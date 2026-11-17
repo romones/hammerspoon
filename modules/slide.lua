@@ -15,9 +15,8 @@ local function module_init()
     for key, direction_string in pairs(keys) do
         local nudge_fn = nudge[direction_string]
 
-
         if nudge_fn == nil then
-            error("arrow: " .. direction_string .. " is not a valid direction")
+            error("slide: " .. direction_string .. " is not a valid direction")
         end
 
         hotkey.bind(mash, key, function()
@@ -26,7 +25,7 @@ local function module_init()
                 return
             end
 
-            local dimensions = win:focusedWindow():frame()
+            local dimensions = win:frame()
             local newframe = nudge_fn(dimensions)
 
             win:setFrame(newframe)
