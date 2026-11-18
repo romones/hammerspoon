@@ -1,7 +1,5 @@
 local alert = require 'hs.alert'
-local notify = require 'hs.notify'
 local fnutils = require 'hs.fnutils'
-local hotkey = require 'hs.hotkey'
 
 local find = import('utils/find')
 local monitors = import('utils/monitors').configured_monitors
@@ -90,45 +88,59 @@ local function handle_arrangement(arrangement)
     end
 end
 
-local function init_module()
-    if config.arrangements == nil then
-        notify.show("Arrangements has no available configs", "", "Set some configs set in config.arrangements or unload this module", "")
+local matcher
+
+local function find_arrangement(name)
+    local arrangements = config.arrangements or {}
+    if type(arrangements[name]) == "table" and arrangements[name].arrangement ~= nil then
+        return arrangements[name]
+    end
+    for _, arrangement in ipairs(arrangements) do
+        if arrangement.name == name then
+            return arrangement
+        end
+    end
+    return nil
+end
+
+local function activate(name)
+    local arrangement = find_arrangement(name)
+    if arrangement == nil then
+        alert.show("Unknown arrangement: " .. tostring(name), 2.0)
         return
     end
+    handle_arrangement(arrangement)
+end
 
-    for _, arrangement in ipairs(config.arrangements) do
-        if arrangement.key == nil and arrangement.menu ~= true then
-            error("Arrangement is missing a key value, and isn't bound to the menu.")
-        end
-
-        if arrangement.key ~= nil then
-            hotkey.bind(arrangement.mash or { "cmd", "ctrl", "alt" }, arrangement.key, fnutils.partial(handle_arrangement, arrangement))
-        end
+local function by_name(name)
+    if find_arrangement(name) == nil then
+        error("Unknown arrangement profile: " .. tostring(name))
     end
+    return function()
+        activate(name)
+    end
+end
 
-    if config:get('arrangements.fuzzy_search', false) then
-        local mash = config:get('arrangements.fuzzy_search.mash', {"ctrl", "alt", "cmd"})
-        local key = config:get('arrangements.fuzzy_search.key', "F")
-
+local function fuzzy_search()
+    if matcher == nil then
         local match_dialogue = import('utils/match_dialogue')
-
-        local matcher = match_dialogue(function()
-            local list = fnutils.filter(config.arrangements, function(arrangement) return arrangement.name ~= nil end)
+        matcher = match_dialogue(function()
+            local list = fnutils.filter(config.arrangements or {}, function(arrangement)
+                return arrangement.name ~= nil
+            end)
             return fnutils.map(list, function(arrangement)
                 return {
-                    string = arrangement.name,
-                    arrangement = arrangement
+                    text = arrangement.name,
+                    arrangement = arrangement,
                 }
             end)
         end, function(match)
             handle_arrangement(match.arrangement)
-        end)
-
-        hotkey.bind(mash, key, fnutils.partial(matcher.show, matcher))
-
+        end, {
+            placeholder = "Select window arrangement...",
+        })
     end
-
-
+    matcher:show()
 end
 
 local function init_menu()
@@ -157,6 +169,9 @@ local function init_menu()
 end
 
 return {
-    init = init_module,
-    menu = init_menu
+    arrange = arrange,
+    activate = activate,
+    by_name = by_name,
+    fuzzy_search = fuzzy_search,
+    menu = init_menu,
 }
