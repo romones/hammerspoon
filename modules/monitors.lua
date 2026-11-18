@@ -1,73 +1,69 @@
-local hotkey = require 'hs.hotkey'
 local window = require 'hs.window'
 local geometry = require 'hs.geometry'
 local mouse = require 'hs.mouse'
 
 local position = import('utils/position')
-local monitors = import('utils/monitors')
+local monitors_util = import('utils/monitors')
 
-local function init_module()
-    local mash = config:get('binds.mash', { "cmd", "ctrl" })
+local function focus_mouse(monitor)
+    return function()
+        local midpoint = geometry.rectMidPoint(monitor.dimensions)
+        mouse.absolutePosition(midpoint)
+    end
+end
 
-    for id, monitor in pairs(monitors.configured_monitors) do
-        hotkey.bind({ "cmd", "ctrl" }, "PAD" .. id, function()
-            local midpoint = geometry.rectMidPoint(monitor.dimensions)
-            mouse.absolutePosition(midpoint)
-        end)
-
-        hotkey.bind({ "cmd", "ctrl", "alt" }, "PAD" .. id, function()
-            local win = window.focusedWindow()
-            if win ~= nil then
-                win:setFrame(position.full(monitor.dimensions))
-            end
-        end)
-
-        hotkey.bind({ "ctrl", "alt" }, "PAD" .. id, function()
-            local win = window.focusedWindow()
-            if win ~= nil then
-                win:setFrame(position.left(monitor.dimensions))
-            end
-        end)
-
-        hotkey.bind({ "cmd", "alt" }, "PAD" .. id, function()
-            local win = window.focusedWindow()
-            if win ~= nil then
-                win:setFrame(position.right(monitor.dimensions))
-            end
-        end)
-
-        hotkey.bind({ "shift", "ctrl", "alt" }, "PAD" .. id, function()
-            local win = window.focusedWindow()
-            if win ~= nil then
-                win:setFrame(monitor.dimensions:relative_window_position(win))
-            end
-        end)
+local function snap_window(monitor, position_string)
+    local position_fn = position[position_string]
+    if position_fn == nil then
+        error("monitors: " .. tostring(position_string) .. " is not a valid position")
     end
 
-    hotkey.bind(mash, 'TAB', function()
-        local screen = mouse.getCurrentScreen()
-        if screen == nil then return end
-        local nextScreen = screen:next()
-        if nextScreen == nil then return end
-        local center = geometry.rectMidPoint(nextScreen:fullFrame())
-        mouse.absolutePosition(center)
-    end)
-
-    hotkey.bind(mash, '=', function()
+    return function()
         local win = window.focusedWindow()
         if win ~= nil then
-            win:moveOneScreenEast(false, true)
+            win:setFrame(position_fn(monitor.dimensions))
         end
-    end)
+    end
+end
 
-    hotkey.bind(mash, '/', function()
+local function move_window_relative(monitor)
+    return function()
         local win = window.focusedWindow()
         if win ~= nil then
-            win:moveOneScreenWest(false, true)
+            win:setFrame(monitor.dimensions:relative_window_position(win))
         end
-    end)
+    end
+end
+
+local function focus_next_screen()
+    local screen = mouse.getCurrentScreen()
+    if screen == nil then return end
+    local nextScreen = screen:next()
+    if nextScreen == nil then return end
+    local center = geometry.rectMidPoint(nextScreen:fullFrame())
+    mouse.absolutePosition(center)
+end
+
+local function move_window_east()
+    local win = window.focusedWindow()
+    if win ~= nil then
+        win:moveOneScreenEast(false, true)
+    end
+end
+
+local function move_window_west()
+    local win = window.focusedWindow()
+    if win ~= nil then
+        win:moveOneScreenWest(false, true)
+    end
 end
 
 return {
-    init = init_module
+    configured_monitors = monitors_util.configured_monitors,
+    focus_mouse = focus_mouse,
+    snap_window = snap_window,
+    move_window_relative = move_window_relative,
+    focus_next_screen = focus_next_screen,
+    move_window_east = move_window_east,
+    move_window_west = move_window_west,
 }

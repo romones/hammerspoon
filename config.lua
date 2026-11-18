@@ -5,8 +5,6 @@ config.modules = {
     ,"arrangement"
     ,'auto_reload'
     ,"monitors"
-    ,"repl"
-    ,"reload"
     ,"arrows"
     ,"lock"
     ,"fullscreen"
@@ -25,15 +23,9 @@ config.monitors = {
 
 -- Window arrangements.
 config.arrangements = {
-    fuzzy_search = {
-        mash = {"cmd", "ctrl", "alt"},
-        key = "Z"
-    },
     {
         name = "Diagnose",
         alert = true,
-        mash = { "cmd", "ctrl", "alt" },
-        key = "Q",
         arrangement = {
             {
                 title = "^Diagnose",
@@ -50,8 +42,6 @@ config.arrangements = {
     {
         name = "zen",
         alert = true,
-        mash = { "cmd", "ctrl", "alt" },
-        key = "A",
         arrangement = {
             {
                 app_title = "^Mail",
@@ -89,10 +79,6 @@ config.arrangements = {
             }
         }
     }
-}
-
-config.binds = {
-    mash = { "cmd", "ctrl", "alt", "shift" },
 }
 
 return config
